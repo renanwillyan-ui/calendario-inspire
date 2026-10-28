@@ -15,7 +15,7 @@
 <meta name="ClaudeBot" content="noindex, nofollow">
 <meta name="PerplexityBot" content="noindex, nofollow">
 <meta name="robots" content="noai, noimageai">
-<meta name="referrer" content="no-referrer">
+<script src="https://accounts.google.com/gsi/client" async></script>
 <title>Calendário Inspire+</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -178,10 +178,31 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{border:0;background:var(--navy);color:var(--yellow);border-radius:999px;padding:6px 12px;font-weight:800;cursor:pointer;font-size:12px}
 
+/* Sign-in gate */
+.gate{position:fixed;inset:0;z-index:30;background:var(--bg);display:grid;place-items:center;padding:24px 16px;overflow:auto}
+.gatebox{max-width:440px;width:100%;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+.gatebox .eyebrow{margin:0}
+.gatebox h2{margin:0;font-size:clamp(34px,7vw,52px);font-weight:900;line-height:1;letter-spacing:-.02em}
+.gatebox h2 span{color:var(--yellow)}
+.gatebox p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.55}
+.gatebox p b{color:var(--ink)}
+.gbtn{min-height:44px}
+.gerr{color:var(--danger)!important;font-weight:600}
+.who{flex-wrap:wrap;justify-content:flex-end}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gatebox">
+    <p class="eyebrow">Calendário de postagens</p>
+    <h2>INSPIRE<span>+</span></h2>
+    <p>Acesso exclusivo da equipe. Entre com seu e-mail <b>@inspiremais.com</b> para ver o calendário.</p>
+    <div class="gbtn" id="gbtn"></div>
+    <p class="gerr" id="gerr" hidden></p>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div>
@@ -362,16 +383,22 @@ if(window.matchMedia("(max-width:760px)").matches)state.mode="list";
 
 /* Apps Script API: the page talks to it without anyone's Google cookies, so several signed-in accounts don't matter */
 const API="https://script.google.com/macros/s/AKfycbwKjmNEjZFYqCMkJPuuOpk9UlYHR1DJF9uMJdx_NaH02My2zgvuvNWlJ1ylQjLyks5m/exec";
+const CLIENT_ID="231727002249-vl5elro1dq0an48i1t1sjtrk8dkkugtf.apps.googleusercontent.com";
+const DOMAIN="inspiremais.com";
+let idToken=null;
 async function unwrap(r){
   if(!r.ok)throw new Error("O servidor do calendário não respondeu. Tente de novo em instantes.");
   const d=await r.json();
-  if(!d.ok)throw new Error(d.error||"Erro no servidor.");
+  if(!d.ok){
+    if(d.error==="LOGIN_NECESSARIO")needLogin("Sua sessão expirou. Entre de novo com seu e-mail @inspiremais.com.");
+    else if(d.error==="DOMINIO_NAO_PERMITIDO")needLogin("Esse e-mail não tem acesso. Entre com seu e-mail @inspiremais.com.");
+    throw new Error(d.error||"Erro no servidor.");
+  }
   return d;
 }
-const apiGet=()=>fetch(API+"?action=list&t="+Date.now(),{credentials:"omit",cache:"no-store"}).then(unwrap).then(d=>d.posts);
-const apiPost=b=>fetch(API,{method:"POST",credentials:"omit",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(b)}).then(unwrap);
+const apiPost=b=>fetch(API,{method:"POST",credentials:"omit",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...b,token:idToken})}).then(unwrap);
 const ROUTES={
-  getPosts:()=>apiGet(),
+  getPosts:()=>apiPost({action:"list"}).then(d=>d.posts),
   checkPin:pin=>apiPost({action:"checkPin",pin}).then(d=>d.valid),
   savePost:(pin,post,by)=>apiPost({action:"save",pin,post,by}).then(d=>d.posts),
   movePost:(pin,id,date,by)=>apiPost({action:"move",pin,id,date,by}).then(d=>d.posts),
@@ -427,6 +454,7 @@ function renderWho(){
   const w=$("#who");w.innerHTML="";
   if(canWrite)w.append(el("span",{},["Editando como ",el("b",{text:editorName||"social media"})]),el("button",{class:"link",text:"Sair",onclick:logout}));
   else w.append(el("button",{class:"link",text:"Entrar para editar",onclick:openLogin}));
+  if(viewerEmail)w.append(el("span",{text:"·"}),el("span",{text:viewerEmail}),el("button",{class:"link",text:"Sair",onclick:()=>signOut("")}));
 }
 function render(){
   const t=$("#monthTitle");t.innerHTML="";
@@ -669,14 +697,51 @@ $("#fStatus").addEventListener("change",e=>{state.status=e.target.value;render()
 $("#addBtn").addEventListener("click",()=>openEditor(null,state.y===today.getFullYear()&&state.m===today.getMonth()?todayIso:iso(state.y,state.m,1)));
 document.addEventListener("keydown",e=>{if(dlg.open||login.open||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==="ArrowLeft")shift(-1);if(e.key==="ArrowRight")shift(1)});
 
-/* ---------- start ---------- */
-render();
-(async()=>{
+/* ---------- Google sign-in gate: only @inspiremais.com sees the calendar ---------- */
+let viewerEmail="",started=false;
+function claims(t){try{const b=t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");return JSON.parse(decodeURIComponent(escape(atob(b))))}catch(e){return null}}
+function showGate(msg){$("#gate").hidden=false;$("#gerr").textContent=msg||"";$("#gerr").hidden=!msg}
+function acceptToken(t){
+  const c=claims(t);
+  if(!c||c.exp*1000<Date.now()+60000)return false;
+  const email=String(c.email||"").toLowerCase();
+  if(!email.endsWith("@"+DOMAIN)){showGate(`O e-mail ${email} não tem acesso. Entre com seu e-mail @${DOMAIN}.`);return false}
+  idToken=t;viewerEmail=email;store.set("insp-idt",t);
+  if(!editorName&&c.given_name)editorName=c.given_name;
+  $("#gate").hidden=true;
+  start();
+  return true;
+}
+function signOut(msg){
+  idToken=null;viewerEmail="";store.set("insp-idt",null);
+  posts=[];loaded=false;lastJson="";
+  logout();
+  try{google.accounts.id.disableAutoSelect()}catch(e){}
+  showGate(msg);
+}
+function needLogin(msg){signOut(msg)}
+async function start(){
+  render();
+  if(started){refresh();return}
+  started=true;
   if(pin){try{canWrite=await call("checkPin",pin)}catch(e){canWrite=false}if(!canWrite)logout()}
   await refresh();
-  setInterval(()=>{if(!document.hidden&&!dlg.open)refresh()},POLL_MS);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
-})();
+  setInterval(()=>{if(!document.hidden&&!dlg.open&&idToken)refresh()},POLL_MS);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&idToken)refresh()});
+}
+function initGoogle(){
+  if(!window.google||!google.accounts||!google.accounts.id){setTimeout(initGoogle,200);return}
+  google.accounts.id.initialize({client_id:CLIENT_ID,callback:r=>{acceptToken(r.credential)},auto_select:true,hd:DOMAIN,ux_mode:"popup",use_fedcm_for_prompt:true});
+  google.accounts.id.renderButton($("#gbtn"),{theme:"filled_black",size:"large",shape:"pill",text:"signin_with",locale:"pt-BR"});
+  if(!idToken)google.accounts.id.prompt();
+}
+// Google sign-in lasts 1 hour; ask for a fresh one a few minutes before it ends
+setInterval(()=>{const c=idToken&&claims(idToken);if(c&&c.exp*1000<Date.now()+5*60000){try{google.accounts.id.prompt()}catch(e){}}},60000);
+
+render();
+const savedToken=store.get("insp-idt");
+if(!(savedToken&&acceptToken(savedToken)))showGate("");
+initGoogle();
 </script>
 </body>
 </html>
