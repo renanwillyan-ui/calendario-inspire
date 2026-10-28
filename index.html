@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Calend√°rio Inspire+</title>
+<title>Calendário Inspire+</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap">
 <style>
-/* Layout: the brand's own month poster, made live ‚Äî dark board, 7-column grid, yellow Reels and white Artes tiles that drag between days. */
+/* Layout: the brand's own month poster, made live — dark board, 7-column grid, yellow Reels and white Artes tiles that drag between days. */
 :root{
   --bg:#1b1d29;
   --cell:#23263a;
@@ -172,18 +172,18 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 <div class="wrap">
   <header class="top">
     <div>
-      <p class="eyebrow">Calend√°rio de postagens</p>
+      <p class="eyebrow">Calendário de postagens</p>
       <div class="titlerow">
         <h1 id="monthTitle">&nbsp;</h1>
         <div class="nav">
-          <button class="navbtn" id="prev" aria-label="M√™s anterior"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L5 8l5 5"/></svg></button>
-          <button class="navbtn" id="next" aria-label="Pr√≥ximo m√™s"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3l5 5-5 5"/></svg></button>
+          <button class="navbtn" id="prev" aria-label="Mês anterior"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L5 8l5 5"/></svg></button>
+          <button class="navbtn" id="next" aria-label="Próximo mês"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3l5 5-5 5"/></svg></button>
         </div>
       </div>
       <div class="legend">
-        <span class="lg"><i class="sw reels"></i>REELS ¬∑ <span id="cReels">0</span></span>
-        <span class="lg"><i class="sw artes"></i>ARTES ¬∑ <span id="cArtes">0</span></span>
-        <span class="lg-total" id="cTotal">0 publica√ß√µes no m√™s</span>
+        <span class="lg"><i class="sw reels"></i>REELS · <span id="cReels">0</span></span>
+        <span class="lg"><i class="sw artes"></i>ARTES · <span id="cArtes">0</span></span>
+        <span class="lg-total" id="cTotal">0 publicações no mês</span>
       </div>
     </div>
     <div class="brandcol">
@@ -203,17 +203,17 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
       <select class="sel" id="fStatus" aria-label="Filtrar por status">
         <option value="">Todos os status</option>
         <option value="planejado">Planejado</option>
-        <option value="producao">Em produ√ß√£o</option>
+        <option value="producao">Em produção</option>
         <option value="aprovado">Aprovado</option>
         <option value="publicado">Publicado</option>
       </select>
     </div>
     <div class="actions">
-      <div class="seg" role="group" aria-label="Visualiza√ß√£o">
-        <button data-mode="cal" aria-pressed="true">Calend√°rio</button>
+      <div class="seg" role="group" aria-label="Visualização">
+        <button data-mode="cal" aria-pressed="true">Calendário</button>
         <button data-mode="list" aria-pressed="false">Lista</button>
       </div>
-      <button class="btn primary" id="addBtn" hidden><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.2"><path d="M6 1v10M1 6h10"/></svg>Nova publica√ß√£o</button>
+      <button class="btn primary" id="addBtn" hidden><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.2"><path d="M6 1v10M1 6h10"/></svg>Nova publicação</button>
     </div>
   </div>
 
@@ -221,16 +221,16 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 
   <div class="statuskey">
     <span><i class="dot planejado"></i>Planejado</span>
-    <span><i class="dot producao"></i>Em produ√ß√£o</span>
+    <span><i class="dot producao"></i>Em produção</span>
     <span><i class="dot aprovado"></i>Aprovado</span>
     <span><i class="dot publicado"></i>Publicado</span>
-    <span id="dragHint" hidden>¬∑ Arraste um post para outro dia para mudar a data</span>
+    <span id="dragHint" hidden>· Arraste um post para outro dia para mudar a data</span>
   </div>
 
   <main id="view"></main>
 
   <footer class="foot">
-    <span>Somos a maior e melhor ag√™ncia de marketing educacional do pa√≠s!</span>
+    <span>Somos a maior e melhor agência de marketing educacional do país!</span>
     <span>@inspiremais</span>
   </footer>
 </div>
@@ -238,7 +238,7 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 <dialog id="login" aria-labelledby="loginTitle">
   <form class="ed" id="loginForm" method="dialog">
     <h2 id="loginTitle">Entrar para editar</h2>
-    <p class="sub">S√≥ quem tem o PIN da equipe de social media pode criar, mover e editar publica√ß√µes.</p>
+    <p class="sub">Só quem tem o PIN da equipe de social media pode criar, mover e editar publicações.</p>
     <div class="field">
       <label for="l-name">Seu nome</label>
       <input class="inp" id="l-name" maxlength="40" required placeholder="Ex.: Carol">
@@ -259,9 +259,9 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 
 <dialog id="editor" aria-labelledby="edTitle">
   <form class="ed" id="edForm" method="dialog">
-    <h2 id="edTitle">Publica√ß√£o</h2>
+    <h2 id="edTitle">Publicação</h2>
     <div class="field">
-      <label for="f-title">T√≠tulo</label>
+      <label for="f-title">Título</label>
       <input class="inp" id="f-title" required maxlength="80" placeholder="Ex.: ENEM no Saeb">
     </div>
     <div class="two">
@@ -273,7 +273,7 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
         </div>
       </div>
       <div class="field">
-        <label for="f-date">Data de publica√ß√£o</label>
+        <label for="f-date">Data de publicação</label>
         <input class="inp" id="f-date" type="date" required>
       </div>
     </div>
@@ -287,7 +287,7 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
         <label for="f-status">Status</label>
         <select class="inp" id="f-status">
           <option value="planejado">Planejado</option>
-          <option value="producao">Em produ√ß√£o</option>
+          <option value="producao">Em produção</option>
           <option value="aprovado">Aprovado</option>
           <option value="publicado">Publicado</option>
         </select>
@@ -298,17 +298,17 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
       <div class="chips" id="f-channels"></div>
     </div>
     <div class="field">
-      <label for="f-note">Observa√ß√£o</label>
-      <textarea class="inp" id="f-note" maxlength="400" placeholder="Roteiro, refer√™ncia, link do briefing‚Ä¶"></textarea>
+      <label for="f-note">Observação</label>
+      <textarea class="inp" id="f-note" maxlength="400" placeholder="Roteiro, referência, link do briefing…"></textarea>
     </div>
     <div class="field">
       <label for="f-drive">Pasta no Drive</label>
-      <input class="inp" id="f-drive" type="url" placeholder="https://drive.google.com/drive/folders/‚Ä¶">
+      <input class="inp" id="f-drive" type="url" placeholder="https://drive.google.com/drive/folders/…">
     </div>
     <p class="err" id="edErr" hidden></p>
     <div class="edfoot">
       <span class="stamp" id="edStamp"></span>
-      <a class="btn ghost" id="edDrive" target="_blank" rel="noopener" hidden>Abrir pasta no Drive ‚Üó</a>
+      <a class="btn ghost" id="edDrive" target="_blank" rel="noopener" hidden>Abrir pasta no Drive ↗</a>
       <button type="button" class="btn danger" id="edDelete" hidden>Excluir</button>
       <div class="right">
         <button type="button" class="btn ghost" id="edCancel">Cancelar</button>
@@ -321,10 +321,10 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastUndo" hidden>Desfazer</button></div>
 
 <script>
-const MONTHS=["Janeiro","Fevereiro","Mar√ßo","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const MONTHS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MON3=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-const WD=["DOM","SEG","TER","QUA","QUI","SEX","S√ÅB"];
-const STATUS={planejado:"Planejado",producao:"Em produ√ß√£o",aprovado:"Aprovado",publicado:"Publicado"};
+const WD=["DOM","SEG","TER","QUA","QUI","SEX","SÁB"];
+const STATUS={planejado:"Planejado",producao:"Em produção",aprovado:"Aprovado",publicado:"Publicado"};
 const CHANNELS=["Instagram","LinkedIn","TikTok","YouTube","Facebook"];
 const PERSON_SVG='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="4" r="2.2"/><path d="M2 11c.5-2.2 2-3.3 4-3.3s3.5 1.1 4 3.3"/></svg>';
 const POLL_MS=20000;
@@ -350,7 +350,7 @@ if(window.matchMedia("(max-width:760px)").matches)state.mode="list";
 /* Apps Script API: the page talks to it without anyone's Google cookies, so several signed-in accounts don't matter */
 const API="https://script.google.com/macros/s/AKfycbwKjmNEjZFYqCMkJPuuOpk9UlYHR1DJF9uMJdx_NaH02My2zgvuvNWlJ1ylQjLyks5m/exec";
 async function unwrap(r){
-  if(!r.ok)throw new Error("O servidor do calend√°rio n√£o respondeu. Tente de novo em instantes.");
+  if(!r.ok)throw new Error("O servidor do calendário não respondeu. Tente de novo em instantes.");
   const d=await r.json();
   if(!d.ok)throw new Error(d.error||"Erro no servidor.");
   return d;
@@ -421,7 +421,7 @@ function render(){
   const mp=monthPosts();
   const r=mp.filter(p=>typeOf(p)==="reels").length;
   $("#cReels").textContent=r;$("#cArtes").textContent=mp.length-r;
-  $("#cTotal").textContent=`${mp.length} ${mp.length===1?"publica√ß√£o":"publica√ß√µes"} no m√™s`;
+  $("#cTotal").textContent=`${mp.length} ${mp.length===1?"publicação":"publicações"} no mês`;
   document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===state.mode));
   document.querySelectorAll("[data-type]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.type===state.type));
   $("#addBtn").hidden=!canWrite;
@@ -429,8 +429,8 @@ function render(){
   renderWho();
   renderPeopleFilter();
   const v=$("#view");v.innerHTML="";
-  if(loadError){v.append(el("div",{class:"empty",text:"N√£o foi poss√≠vel carregar o calend√°rio. Verifique sua conex√£o e recarregue a p√°gina."}));return}
-  if(!loaded){v.append(el("div",{class:"empty",text:"Carregando as publica√ß√µes da equipe‚Ä¶"}));return}
+  if(loadError){v.append(el("div",{class:"empty",text:"Não foi possível carregar o calendário. Verifique sua conexão e recarregue a página."}));return}
+  if(!loaded){v.append(el("div",{class:"empty",text:"Carregando as publicações da equipe…"}));return}
   v.append(state.mode==="cal"?renderCal(mp):renderList(mp));
 }
 
@@ -451,11 +451,11 @@ function postCard(p,solo){
     solo?el("span",{class:"pnum",text:String(parts(p.date).d)}):el("span"),
     el("span",{class:"badge",title:STATUS[st]},[el("i",{class:"dot "+st}),t.toUpperCase()])
   ]);
-  const body=el("div",{class:"body"},[el("div",{class:"ptitle",text:p.title||"Sem t√≠tulo"})]);
+  const body=el("div",{class:"body"},[el("div",{class:"ptitle",text:p.title||"Sem título"})]);
   if(ppl.length)body.append(el("span",{class:"pill",html:PERSON_SVG},[el("span",{text:joinPeople(ppl)})]));
   else if(p.note&&solo)body.append(el("div",{class:"pnote",text:p.note}));
   const card=el("div",{class:`post ${t}${matches(p)?"":" dim"}`,role:"button",tabindex:"0",
-    "aria-label":`${p.title||"Sem t√≠tulo"}, ${t}, ${fmtDay(p.date)}, ${STATUS[st]}`,
+    "aria-label":`${p.title||"Sem título"}, ${t}, ${fmtDay(p.date)}, ${STATUS[st]}`,
     draggable:canWrite?"true":null,
     onclick:e=>{e.stopPropagation();openEditor(p)},
     onkeydown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openEditor(p)}}
@@ -482,7 +482,7 @@ function renderCal(mp){
       if(list.length)cell.append(el("div",{class:"stack"},list.map(p=>postCard(p,false))));
     }
     if(canWrite){
-      if(!solo)cell.append(el("button",{class:"addday","aria-label":`Nova publica√ß√£o em ${fmtDay(ds)}`,html:'<svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.2"><path d="M6 1v10M1 6h10"/></svg>',onclick:e=>{e.stopPropagation();openEditor(null,ds)}}));
+      if(!solo)cell.append(el("button",{class:"addday","aria-label":`Nova publicação em ${fmtDay(ds)}`,html:'<svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.2"><path d="M6 1v10M1 6h10"/></svg>',onclick:e=>{e.stopPropagation();openEditor(null,ds)}}));
       cell.addEventListener("dragover",e=>{if(!dragId)return;e.preventDefault();e.dataTransfer.dropEffect="move";cell.classList.add("drop")});
       cell.addEventListener("dragleave",e=>{if(!cell.contains(e.relatedTarget))cell.classList.remove("drop")});
       cell.addEventListener("drop",e=>{e.preventDefault();cell.classList.remove("drop");const id=e.dataTransfer.getData("text/plain")||dragId;if(id)movePost(id,ds)});
@@ -490,26 +490,26 @@ function renderCal(mp){
     grid.append(cell);
   }
   const wrap=el("div",{class:"calscroll"},grid);
-  if(!mp.length)return el("div",{},[el("p",{class:"notice",text:canWrite?"Nenhuma publica√ß√£o neste m√™s ainda. Clique no + de um dia ou em ‚ÄúNova publica√ß√£o‚Äù para come√ßar.":"Nenhuma publica√ß√£o planejada para este m√™s."}),wrap]);
+  if(!mp.length)return el("div",{},[el("p",{class:"notice",text:canWrite?"Nenhuma publicação neste mês ainda. Clique no + de um dia ou em “Nova publicação” para começar.":"Nenhuma publicação planejada para este mês."}),wrap]);
   return wrap;
 }
 
 function renderList(mp){
-  if(!mp.length)return el("div",{class:"empty",text:canWrite?"Nenhuma publica√ß√£o neste m√™s. Use ‚ÄúNova publica√ß√£o‚Äù para adicionar a primeira.":"Nenhuma publica√ß√£o planejada para este m√™s."});
+  if(!mp.length)return el("div",{class:"empty",text:canWrite?"Nenhuma publicação neste mês. Use “Nova publicação” para adicionar a primeira.":"Nenhuma publicação planejada para este mês."});
   const shown=mp.filter(matches);
-  if(!shown.length)return el("div",{class:"empty",text:"Nenhuma publica√ß√£o com esses filtros."});
+  if(!shown.length)return el("div",{class:"empty",text:"Nenhuma publicação com esses filtros."});
   return el("div",{class:"list"},shown.map(p=>{
     const pp=parts(p.date),t=typeOf(p),st=statusOf(p),ppl=peopleOf(p);
-    const wd=["Dom","Seg","Ter","Qua","Qui","Sex","S√°b"][new Date(pp.y,pp.m,pp.d).getDay()];
+    const wd=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][new Date(pp.y,pp.m,pp.d).getDay()];
     const meta=el("div",{class:"rmeta"},[el("span",{text:t==="reels"?"Reels":"Artes"})]);
     if(ppl.length)meta.append(el("span",{text:joinPeople(ppl)}));
     const ch=Array.isArray(p.channels)?p.channels.filter(c=>CHANNELS.includes(c)):[];
-    if(ch.length)meta.append(el("span",{text:ch.join(" ¬∑ ")}));
+    if(ch.length)meta.append(el("span",{text:ch.join(" · ")}));
     if(p.note)meta.append(el("span",{text:p.note}));
     if(driveOf(p))meta.append(el("span",{class:"drv",text:"Pasta no Drive"}));
     return el("button",{class:"row",onclick:()=>openEditor(p)},[
       el("div",{class:"rdate "+t},[el("b",{text:String(pp.d)}),el("small",{text:wd})]),
-      el("div",{class:"rmain"},[el("div",{class:"rtitle",text:p.title||"Sem t√≠tulo"}),meta]),
+      el("div",{class:"rmain"},[el("div",{class:"rtitle",text:p.title||"Sem título"}),meta]),
       el("span",{class:"rstatus"},[el("i",{class:"dot "+st}),STATUS[st]])
     ]);
   }));
@@ -528,7 +528,7 @@ $("#loginForm").addEventListener("submit",async e=>{
   $("#loginGo").disabled=false;
   if(!ok){$("#loginErr").textContent="PIN incorreto. Confira com a equipe de social media.";$("#loginErr").hidden=false;return}
   pin=p;editorName=name;canWrite=true;store.set("insp-pin",p);store.set("insp-name",name);
-  login.close();render();toast(`Pronto, ${name}. Agora voc√™ pode editar.`);
+  login.close();render();toast(`Pronto, ${name}. Agora você pode editar.`);
 });
 function logout(){pin=null;canWrite=false;store.set("insp-pin",null);render()}
 
@@ -539,7 +539,7 @@ async function write(fn,...args){
   catch(e){
     const m=String(e&&e.message||e);
     if(m.includes("PIN_INVALIDO")){logout();toast("O PIN mudou. Entre de novo para editar.")}
-    else toast(m.length<120?m:"N√£o foi poss√≠vel salvar. Tente de novo.");
+    else toast(m.length<120?m:"Não foi possível salvar. Tente de novo.");
     return false;
   }finally{busy--}
 }
@@ -549,7 +549,7 @@ async function movePost(id,date){
   p.date=date;render();
   if(!await write("movePost",id,date,editorName)){p.date=from;render();return}
   undo={id,from};
-  toast(`‚Äú${p.title}‚Äù movido para ${fmtDay(date)}`,true);
+  toast(`“${p.title}” movido para ${fmtDay(date)}`,true);
 }
 
 /* ---------- editor ---------- */
@@ -562,7 +562,7 @@ $("#f-channels").addEventListener("click",e=>{const c=e.target.closest(".chip");
 function openEditor(p,date){
   editing=p?p.id:"new";
   const ro=!canWrite;
-  $("#edTitle").textContent=p?(ro?p.title||"Publica√ß√£o":"Editar publica√ß√£o"):"Nova publica√ß√£o";
+  $("#edTitle").textContent=p?(ro?p.title||"Publicação":"Editar publicação"):"Nova publicação";
   $("#f-title").value=p?p.title||"":"";
   setChips($("#f-type"),p?typeOf(p):"reels",false);
   $("#f-date").value=p?p.date:(date||iso(state.y,state.m,1));
@@ -581,7 +581,7 @@ function openEditor(p,date){
   let st="";
   if(p&&p.updatedAt){
     const w=new Date(p.updatedAt);
-    st=`√öltima altera√ß√£o${p.updatedBy?" por "+p.updatedBy:""}${isNaN(w)?"":` em ${w.getDate()} ${MON3[w.getMonth()]}, ${pad(w.getHours())}:${pad(w.getMinutes())}`}`;
+    st=`Última alteração${p.updatedBy?" por "+p.updatedBy:""}${isNaN(w)?"":` em ${w.getDate()} ${MON3[w.getMonth()]}, ${pad(w.getHours())}:${pad(w.getMinutes())}`}`;
   }
   $("#edStamp").textContent=st;$("#edStamp").hidden=!st;
   dlg.showModal();
@@ -596,8 +596,8 @@ $("#edForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!canWrite)return closeEditor();
   const title=$("#f-title").value.trim(),date=$("#f-date").value,dv=$("#f-drive").value.trim();
   const err=m=>{$("#edErr").textContent=m;$("#edErr").hidden=false};
-  if(!title||!/^\d{4}-\d{2}-\d{2}$/.test(date))return err("Preencha o t√≠tulo e a data de publica√ß√£o.");
-  if(dv&&!driveOf({driveUrl:dv}))return err("O link da pasta precisa ser do Google Drive (come√ßa com https://drive.google.com/).");
+  if(!title||!/^\d{4}-\d{2}-\d{2}$/.test(date))return err("Preencha o título e a data de publicação.");
+  if(dv&&!driveOf({driveUrl:dv}))return err("O link da pasta precisa ser do Google Drive (começa com https://drive.google.com/).");
   const id=editing;
   const data={
     id:id==="new"?"":id,title,date,
@@ -608,21 +608,21 @@ $("#edForm").addEventListener("submit",async e=>{
     note:$("#f-note").value.trim(),
     driveUrl:dv
   };
-  $("#edSave").disabled=true;$("#edSave").textContent="Salvando‚Ä¶";
+  $("#edSave").disabled=true;$("#edSave").textContent="Salvando…";
   const ok=await write("savePost",data,editorName);
   $("#edSave").disabled=false;$("#edSave").textContent="Salvar";
   if(!ok)return;
   closeEditor();
   const p=parts(date);
   if(p.y!==state.y||p.m!==state.m){state.y=p.y;state.m=p.m;render()}
-  toast(id==="new"?`Publica√ß√£o criada em ${fmtDay(date)}`:"Altera√ß√µes salvas");
+  toast(id==="new"?`Publicação criada em ${fmtDay(date)}`:"Alterações salvas");
 });
 
 $("#edDelete").addEventListener("click",async()=>{
   const b=$("#edDelete");
-  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Confirmar exclus√£o";return}
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Confirmar exclusão";return}
   const id=editing;
-  if(await write("deletePost",id)){closeEditor();toast("Publica√ß√£o exclu√≠da")}
+  if(await write("deletePost",id)){closeEditor();toast("Publicação excluída")}
 });
 
 /* ---------- toast ---------- */
