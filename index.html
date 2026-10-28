@@ -247,6 +247,7 @@ textarea.inp{min-height:72px;resize:vertical;font-weight:500}
         <button data-mode="cal" aria-pressed="true">Calendário</button>
         <button data-mode="list" aria-pressed="false">Lista</button>
       </div>
+      <button class="btn ghost" id="pdfBtn" title="Baixar o mês em PDF"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5M2 12.5h10"/></svg><span>Baixar PDF</span></button>
       <button class="btn primary" id="addBtn" hidden><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.2"><path d="M6 1v10M1 6h10"/></svg>Nova publicação</button>
     </div>
   </div>
@@ -696,6 +697,202 @@ $("#fPerson").addEventListener("change",e=>{state.person=e.target.value;render()
 $("#fStatus").addEventListener("change",e=>{state.status=e.target.value;render()});
 $("#addBtn").addEventListener("click",()=>openEditor(null,state.y===today.getFullYear()&&state.m===today.getMonth()?todayIso:iso(state.y,state.m,1)));
 document.addEventListener("keydown",e=>{if(dlg.open||login.open||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==="ArrowLeft")shift(-1);if(e.key==="ArrowRight")shift(1)});
+
+/* ---------- PDF export: the month as the brand poster, then a week-by-week breakdown ---------- */
+const PDF_LIB="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+const FONT_BASE="https://cdn.jsdelivr.net/gh/JulietaUla/Montserrat@v7.222/fonts/ttf/Montserrat-";
+const FONT_FILES={normal:"Medium",bold:"Bold",black:"Black"};
+const PC={bg:"#1b1d29",cell:"#23263a",line:"#33374f",ink:"#ffffff",soft:"#c9cbd8",muted:"#8b8fa8",dim:"#585d78",yellow:"#f9b11a",paper:"#ffffff",navy:"#1d1f2b",planejado:"#9aa0b8",producao:"#5b8def",aprovado:"#2fbf71",publicado:"#c084fc"};
+let pdfDeps=null;
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("script"));document.head.append(s)})}
+function toB64(buf){const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function loadPdfDeps(){
+  if(!pdfDeps)pdfDeps=(async()=>{
+    if(!window.jspdf)await loadScript(PDF_LIB);
+    // Montserrat keeps the PDF on brand; if the font host is unreachable the PDF still comes out in Helvetica
+    try{
+      const fonts={};
+      await Promise.all(Object.entries(FONT_FILES).map(async([style,file])=>{const r=await fetch(FONT_BASE+file+".ttf");if(!r.ok)throw new Error("font");fonts[style]=toB64(await r.arrayBuffer())}));
+      return {fonts};
+    }catch(e){return {fonts:null}}
+  })().catch(e=>{pdfDeps=null;throw e});
+  return pdfDeps;
+}
+function pdfFit(doc,s,maxW){s=String(s);if(doc.getTextWidth(s)<=maxW)return s;while(s.length>1&&doc.getTextWidth(s+"…")>maxW)s=s.slice(0,-1);return s.trimEnd()+"…"}
+function pdfPainter(doc,fonts){
+  const PW=297,PH=210,M=14;
+  let F="helvetica",W={normal:"normal",bold:"bold",black:"bold"};
+  if(fonts){for(const [st,data] of Object.entries(fonts)){doc.addFileToVFS(`Montserrat-${st}.ttf`,data);doc.addFont(`Montserrat-${st}.ttf`,"Montserrat",st)}F="Montserrat";W={normal:"normal",bold:"bold",black:"black"}}
+  const P={doc,PW,PH,M,
+    fill:c=>doc.setFillColor(c),
+    color:c=>doc.setTextColor(c),
+    font:(w,size)=>{doc.setFont(F,W[w]);doc.setFontSize(size)},
+    text:(s,x,y,o={})=>doc.text(String(s),x,y,{baseline:"top",...o}),
+    bg:()=>{doc.setFillColor(PC.bg);doc.rect(0,0,PW,PH,"F")},
+  };
+  P.logo=(xRight,y,size)=>{P.font("black",size);const w1=doc.getTextWidth("INSPIRE"),w2=doc.getTextWidth("+");P.color(PC.ink);P.text("INSPIRE",xRight-w1-w2,y);P.color(PC.yellow);P.text("+",xRight-w2,y)};
+  P.eyebrow=(s,x,y)=>{P.font("bold",8);P.color(PC.yellow);doc.text(s,x,y,{baseline:"top",charSpace:1.1})};
+  P.footers=()=>{
+    const n=doc.getNumberOfPages(),now=new Date();
+    const stamp=`Gerado em ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} às ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    for(let i=1;i<=n;i++){
+      doc.setPage(i);P.font("normal",7);
+      P.color(PC.soft);P.text("Somos a maior e melhor agência de marketing educacional do país!",M,PH-9);
+      P.color(PC.muted);P.text(`${stamp} · página ${i} de ${n}`,PW/2,PH-9,{align:"center"});
+      P.color(PC.soft);P.text("@inspiremais",PW-M,PH-9,{align:"right"});
+    }
+  };
+  return P;
+}
+function pdfBadge(P,xr,y,t,st){
+  const {doc}=P;P.font("black",5.2);const s=t.toUpperCase();const w=doc.getTextWidth(s)+6.2;
+  P.fill(PC.navy);doc.roundedRect(xr-w,y,w,4.2,0.8,0.8,"F");
+  P.fill(PC[st]);doc.circle(xr-w+2,y+2.1,0.75,"F");
+  P.color(t==="reels"?PC.yellow:PC.paper);P.text(s,xr-w+3.6,y+2.15,{baseline:"middle"});
+}
+function pdfDayTile(P,x,y,w,h,d,list){
+  const {doc}=P;
+  if(list.length===1){
+    const p=list[0],t=typeOf(p),ppl=peopleOf(p);
+    P.fill(t==="reels"?PC.yellow:PC.paper);doc.roundedRect(x,y,w,h,1.6,1.6,"F");
+    P.font("black",15);P.color(PC.navy);P.text(String(d),x+3,y+2.4);
+    pdfBadge(P,x+w-2.6,y+3,t,statusOf(p));
+    P.font("bold",7.6);const lines=doc.splitTextToSize(p.title||"Sem título",w-6).slice(0,2);
+    const pillH=ppl.length?4.4:0,lh=3.3;
+    let by=y+h-2.8-(ppl.length?pillH+1.3:0)-lines.length*lh;
+    P.color(PC.navy);lines.forEach((l,i)=>P.text(l,x+3,by+i*lh));
+    if(ppl.length){
+      P.font("bold",5.8);const s=pdfFit(doc,joinPeople(ppl),w-11);const pw=doc.getTextWidth(s)+5;
+      doc.setDrawColor(PC.navy);doc.setLineWidth(0.3);doc.roundedRect(x+3,y+h-2.8-pillH,pw,pillH,2.2,2.2,"S");
+      P.text(s,x+5.5,y+h-2.8-pillH/2,{baseline:"middle"});
+    }
+    return;
+  }
+  P.fill(PC.cell);doc.roundedRect(x,y,w,h,1.6,1.6,"F");
+  P.font("black",11);P.color(list.length?PC.ink:PC.dim);P.text(String(d),x+3,y+2.6);
+  if(!list.length)return;
+  const bh=Math.min(6.4,(h-10.5-(list.length-1)*1.1)/list.length);let by=y+9;
+  list.forEach(p=>{
+    P.fill(typeOf(p)==="reels"?PC.yellow:PC.paper);doc.roundedRect(x+2,by,w-4,bh,1,1,"F");
+    P.font("bold",Math.min(6.2,bh*1.3));P.color(PC.navy);P.text(pdfFit(doc,p.title||"Sem título",w-8),x+3.5,by+bh/2,{baseline:"middle"});
+    by+=bh+1.1;
+  });
+}
+function pdfCalendarPage(P,mp){
+  const {doc,M,PW,PH}=P;P.bg();
+  P.eyebrow("CALENDÁRIO DE POSTAGENS",M,M);
+  P.font("black",34);const mName=MONTHS[state.m]+" ";P.color(PC.ink);P.text(mName,M,M+5);P.color(PC.yellow);P.text(String(state.y),M+doc.getTextWidth(mName),M+5);
+  P.logo(PW-M,M+10,20);
+  const r=mp.filter(p=>typeOf(p)==="reels").length;let x=M;const y=M+21.5;
+  const chip=(c,label)=>{P.fill(c);doc.roundedRect(x,y+0.2,3.4,3.4,0.8,0.8,"F");P.font("bold",8.5);P.color(PC.ink);P.text(label,x+5,y);x+=5+doc.getTextWidth(label)+6};
+  chip(PC.yellow,`REELS · ${r}`);chip(PC.paper,`ARTES · ${mp.length-r}`);
+  P.font("normal",8.5);P.color(PC.muted);P.text(`${mp.length} ${mp.length===1?"publicação":"publicações"} no mês`,x,y);
+  const top=M+31,gap=2.2,cw=(PW-2*M-gap*6)/7;
+  P.font("bold",7);P.color(PC.muted);WD.forEach((w,i)=>P.text(w,M+i*(cw+gap)+cw/2,top,{align:"center"}));
+  const first=new Date(state.y,state.m,1).getDay(),days=new Date(state.y,state.m+1,0).getDate();
+  const rows=Math.ceil((first+days)/7),gy=top+5.5,rh=(PH-16-gy-gap*(rows-1))/rows;
+  const byDay={};mp.forEach(p=>{(byDay[p.date]||(byDay[p.date]=[])).push(p)});
+  for(let d=1;d<=days;d++){
+    const i=first+d-1;
+    pdfDayTile(P,M+(i%7)*(cw+gap),gy+Math.floor(i/7)*(rh+gap),cw,rh,d,byDay[iso(state.y,state.m,d)]||[]);
+  }
+}
+function pdfSummary(P,mp,y){
+  const {doc,M,PW}=P;
+  const items=[["Publicações",mp.length,PC.ink],["Reels",mp.filter(p=>typeOf(p)==="reels").length,PC.yellow],["Artes",mp.filter(p=>typeOf(p)==="artes").length,PC.paper]];
+  Object.keys(STATUS).forEach(k=>items.push([STATUS[k],mp.filter(p=>statusOf(p)===k).length,PC[k]]));
+  const gap=3,w=(PW-2*M-gap*(items.length-1))/items.length,h=15;
+  items.forEach(([label,n,c],i)=>{
+    const x=M+i*(w+gap);P.fill(PC.cell);doc.roundedRect(x,y,w,h,2,2,"F");
+    P.font("black",15);P.color(PC.ink);P.text(String(n),x+4,y+2.3);
+    P.fill(c);doc.circle(x+5,y+11.3,0.9,"F");P.font("bold",6.3);P.color(PC.muted);P.text(label.toUpperCase(),x+7,y+11.3,{baseline:"middle"});
+  });
+  y+=h+5;
+  const counts={};mp.forEach(p=>peopleOf(p).forEach(n=>{counts[n]=(counts[n]||0)+1}));
+  const names=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b,"pt"));
+  if(names.length){
+    P.font("bold",7);P.color(PC.muted);doc.text("APRESENTADORES",M,y+2.7,{baseline:"middle",charSpace:0.6});
+    let x=M+doc.getTextWidth("APRESENTADORES")+14*0.6+5;
+    names.forEach(n=>{const s=`${n} · ${counts[n]}`;P.font("bold",8);const cw=doc.getTextWidth(s)+7;if(x+cw>PW-M)return;P.fill(PC.cell);doc.roundedRect(x,y,cw,5.4,2.7,2.7,"F");P.color(PC.ink);P.text(s,x+3.5,y+2.7,{baseline:"middle"});x+=cw+2.5});
+    y+=11;
+  }
+  return y;
+}
+function pdfCardLayout(P,p){
+  const {doc,M,PW}=P;const cw=PW-2*M-24-50;
+  P.font("bold",11);const title=doc.splitTextToSize(p.title||"Sem título",cw).slice(0,2);
+  P.font("normal",8.5);const note=p.note?doc.splitTextToSize(p.note,cw).slice(0,5):[];
+  const h=Math.max(21,4+title.length*4.8+1+4.5+(note.length?note.length*3.8+1:0)+(driveOf(p)?4.5:0)+3);
+  return {title,note,h,cw};
+}
+function pdfCard(P,p,y,L){
+  const {doc,M,PW}=P;const t=typeOf(p),st=statusOf(p),pp=parts(p.date);
+  P.fill(PC.cell);doc.roundedRect(M,y,PW-2*M,L.h,2,2,"F");
+  P.fill(t==="reels"?PC.yellow:PC.paper);doc.roundedRect(M,y,20,L.h,2,2,"F");
+  const wd=WD[new Date(pp.y,pp.m,pp.d).getDay()];
+  P.color(PC.navy);P.font("black",17);P.text(String(pp.d),M+10,y+L.h/2-5,{align:"center"});
+  P.font("bold",6.2);P.text(`${wd} · ${MON3[pp.m].toUpperCase()}`,M+10,y+L.h/2+2.6,{align:"center"});
+  const x=M+24;let cy=y+4;
+  P.font("bold",11);P.color(PC.ink);L.title.forEach(l=>{P.text(l,x,cy);cy+=4.8});cy+=1;
+  const ppl=peopleOf(p),ch=(Array.isArray(p.channels)?p.channels:[]).filter(c=>CHANNELS.includes(c));
+  const meta=[t==="reels"?"Reels":"Artes",ppl.length?`Apresentação: ${joinPeople(ppl)}`:"Sem apresentador"];
+  if(ch.length)meta.push(`Canais: ${ch.join(", ")}`);
+  P.font("normal",8);P.color(PC.muted);P.text(pdfFit(doc,meta.join("   ·   "),L.cw),x,cy);cy+=4.5;
+  if(L.note.length){P.font("normal",8.5);P.color(PC.soft);L.note.forEach(l=>{P.text(l,x,cy);cy+=3.8});cy+=1}
+  const du=driveOf(p);
+  if(du){P.font("bold",8);P.color(PC.yellow);P.text("Abrir pasta no Drive",x,cy);doc.link(x,cy,doc.getTextWidth("Abrir pasta no Drive"),3.5,{url:du})}
+  const rx=PW-M-4;P.font("bold",7.5);const sl=STATUS[st],sw=doc.getTextWidth(sl)+8.5;
+  P.fill(PC.bg);doc.roundedRect(rx-sw,y+4,sw,6,3,3,"F");P.fill(PC[st]);doc.circle(rx-sw+3.3,y+7,1,"F");
+  P.color(PC.ink);P.text(sl,rx-sw+5.6,y+7,{baseline:"middle"});
+  const w=p.updatedAt?new Date(p.updatedAt):null;
+  if(w&&!isNaN(w)){
+    P.font("normal",6.5);P.color(PC.muted);
+    if(p.updatedBy)P.text(pdfFit(doc,`Atualizado por ${p.updatedBy}`,44),rx,y+13,{align:"right"});
+    P.text(`${pad(w.getDate())}/${pad(w.getMonth()+1)} às ${pad(w.getHours())}:${pad(w.getMinutes())}`,rx,y+16.2,{align:"right"});
+  }
+}
+function pdfBreakdown(P,mp){
+  const {doc,M,PW,PH}=P,limit=PH-16;
+  const newPage=()=>{doc.addPage("a4","landscape");P.bg();P.eyebrow("DESDOBRAMENTO DAS PUBLICAÇÕES",M,M);P.font("black",20);P.color(PC.ink);P.text(`${MONTHS[state.m]} ${state.y}`,M,M+5);P.logo(PW-M,M+4,14);return M+19};
+  let y=newPage();
+  if(!mp.length){P.font("normal",10);P.color(PC.muted);P.text("Nenhuma publicação planejada para este mês.",M,y+4);return}
+  y=pdfSummary(P,mp,y);
+  const first=new Date(state.y,state.m,1).getDay(),days=new Date(state.y,state.m+1,0).getDate(),weeks={};
+  mp.forEach(p=>{const wk=Math.floor((first+parts(p.date).d-1)/7);(weeks[wk]||(weeks[wk]=[])).push(p)});
+  Object.keys(weeks).map(Number).sort((a,b)=>a-b).forEach(wk=>{
+    const list=weeks[wk],cards=list.map(p=>pdfCardLayout(P,p));
+    const from=Math.max(1,wk*7-first+1),to=Math.min(days,wk*7-first+7);
+    const header=cont=>{
+      const head=`Semana ${wk+1}${cont?" (continuação)":""}`;P.font("black",11);P.color(PC.ink);P.text(head,M,y);
+      const hw=doc.getTextWidth(head);P.font("normal",8.5);P.color(PC.muted);
+      P.text(`${from} a ${to} de ${MONTHS[state.m].toLowerCase()} · ${list.length} ${list.length===1?"publicação":"publicações"}`,M+hw+4,y+0.9);
+      P.fill(PC.line);doc.rect(M,y+6.4,PW-2*M,0.3,"F");y+=9.5;
+    };
+    if(y+10+cards[0].h>limit)y=newPage();
+    header(false);
+    list.forEach((p,i)=>{if(y+cards[i].h>limit){y=newPage();header(true)}pdfCard(P,p,y,cards[i]);y+=cards[i].h+2.5});
+    y+=3;
+  });
+}
+async function buildPdf(){
+  const {fonts}=await loadPdfDeps();
+  const doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  doc.setProperties({title:`Calendário Inspire+ · ${MONTHS[state.m]} ${state.y}`,author:"Inspire+",creator:"Calendário Inspire+"});
+  const P=pdfPainter(doc,fonts),mp=monthPosts();
+  pdfCalendarPage(P,mp);pdfBreakdown(P,mp);P.footers();
+  return doc;
+}
+async function exportPdf(){
+  const btn=$("#pdfBtn"),label=btn.querySelector("span");
+  btn.disabled=true;label.textContent="Gerando PDF…";
+  try{
+    const doc=await buildPdf();
+    doc.save(`calendario-inspire-${MONTHS[state.m].toLowerCase()}-${state.y}.pdf`);
+    toast(`PDF de ${MONTHS[state.m].toLowerCase()} baixado`);
+  }catch(e){toast("Não foi possível gerar o PDF. Verifique sua conexão e tente de novo.")}
+  finally{btn.disabled=false;label.textContent="Baixar PDF"}
+}
+$("#pdfBtn").addEventListener("click",exportPdf);
 
 /* ---------- Google sign-in gate: only @inspiremais.com sees the calendar ---------- */
 let viewerEmail="",started=false;
